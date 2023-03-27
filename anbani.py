@@ -47,6 +47,7 @@ mkhedruli_alphabet = {
 
 STATS_FILE = "mkhedruli_stats.json"
 NUM_OPTIONS = 5
+DISPLAY_OPTIONS_HORIZONTALLY = False
 
 def clear_screen():
     os.system('clear')
@@ -88,8 +89,12 @@ def show_question(character, options):
     clear_screen()
     print(f"[ Press q to save stats and quit ]\n")
     print(f"Identify the name of the following Georgian character:\n\n{character}\n")
-    for i, option in enumerate(options):
-        print(f"{i + 1}. {option}")
+    if DISPLAY_OPTIONS_HORIZONTALLY:
+        option_strings = [f"{i+1}. {option}" for i, option in enumerate(options)]
+        print("  ".join(option_strings))
+    else:
+        for i, option in enumerate(options):
+            print(f"{i+1}. {option}")
 
 def blink(color):
     if color == "green":
