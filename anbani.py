@@ -48,6 +48,7 @@ mkhedruli_alphabet = {
 STATS_FILE = "mkhedruli_stats.json"
 NUM_OPTIONS = 5
 DISPLAY_OPTIONS_HORIZONTALLY = False
+EXIT_KEY = "0"
 
 def clear_screen():
     os.system('clear')
@@ -60,7 +61,7 @@ def load_stats():
         except json.decoder.JSONDecodeError:
             # If the file exists but cannot be parsed as JSON, delete it
             os.remove(STATS_FILE)
-    return {char: {"correct": 0, "incorrect": 0} for char in mkhedruli_alphabet}
+    return {char: {"correct": 0, "incorrect": 0, "avg_time": None} for char in mkhedruli_alphabet}
 
 def save_stats(stats):
     with open(STATS_FILE, "w") as f:
@@ -79,15 +80,16 @@ def calculate_error_rates(stats, exponent=0.5, default_error_rate=0.5):
 def weighted_random_choice(items, weights):
     return random.choices(items, weights, k=1)[0]
 
-def choose_character(stats):
-    error_rates = calculate_error_rates(stats)
-    characters = list(mkhedruli_alphabet.keys())
-    weights = [error_rates[char] for char in characters]
-    return weighted_random_choice(characters, weights)
+def choose_character(stats, exponent=0.5, time_factor=0.1):
+    error_rates = calculate_error_rates(stats, exponent=exponent)
+    max_avg_time = max([stat.get("avg_time", 0) for stat in stats.values()])
+    avg_times = {char: (stat.get("avg_time", 0) / max_avg_time) ** time_factor for char, stat in stats.items()}
+    weights = [error_rates[char] + avg_times[char] for char in mkhedruli_alphabet.keys()]
+    return weighted_random_choice(list(mkhedruli_alphabet.keys()), weights)
 
 def show_question(character, options):
     clear_screen()
-    print(f"[ Press q to save stats and quit ]\n")
+    print(f"[ Press EXIT_KEY to save stats and quit ]\n")
     print(f"Identify the name of the following Georgian character:\n\n{character}\n")
     if DISPLAY_OPTIONS_HORIZONTALLY:
         option_strings = [f"{i+1}. {option}" for i, option in enumerate(options)]
@@ -119,24 +121,46 @@ def main():
     while True:
         character = choose_character(stats)
         correct_name = mkhedruli_alphabet[character]
-        incorrect_names = random.sample([name for name in mkhedruli_alphabet.values() if name != correct_name], NUM_OPTIONS - 1)
+        incorrect_names = random.sample([name for name in mkhedruli_alphabet.values() if name != correct_name], num_options - 1)
         options = [correct_name] + incorrect_names
         random.shuffle(options)
 
         show_question(character, options)
 
-        user_input = getch()
+        start_time = time.time()
+        answer = ""
+        while not answer.isdigit() or not (1 <= int(answer) <= num_options):
+            answer = getch()
+        end_time = time.time()
 
-        if user_input == 'q':
-            save_stats(stats)
+        if answer == EXIT_KEY:
+            break
+        elif options[int(answer)-1] == correct_name:
+            blink("green")
+            time_diff = round(end_time - start_time, 2)
+            if "avg_time" not in stats[character]:
+                stats[character]["avg_time"] = None
+            if stats[character]["avg_time"] is None:
+                stats[character]["avg_time"] = time_diff
+            else:
+                prev_avg_time = stats[character]["avg_time"]
+                stats[character]["avg_time"] = round((prev_avg_time + time_diff) / 2, 2)
+            stats[character]["correct"] += 1
+            answered_correctly = True
+        else:
+            blink("red")
+            stats[character]["incorrect"] += 1
+            answered_correctly = False
+
+        if answer == EXIT_KEY:
             break
 
-        if '1' <= user_input <= str(NUM_OPTIONS) and options[int(user_input) - 1] == correct_name:
-           blink("green")
-           stats[character]["correct"] += 1
-        else:
-           blink("red")
-           stats[character]["incorrect"] += 1
+        if answered_correctly:
+            save_stats(stats)
+
+    save_stats(stats)
+    sys.exit(0)
+
 
 if __name__ == "__main__":
     main()
