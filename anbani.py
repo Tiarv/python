@@ -46,6 +46,7 @@ mkhedruli_alphabet = {
 }
 
 STATS_FILE = "mkhedruli_stats.json"
+NUM_OPTIONS = 5
 
 def clear_screen():
     os.system('clear')
@@ -113,7 +114,7 @@ def main():
     while True:
         character = choose_character(stats)
         correct_name = mkhedruli_alphabet[character]
-        incorrect_names = random.sample([name for name in mkhedruli_alphabet.values() if name != correct_name], 3)
+        incorrect_names = random.sample([name for name in mkhedruli_alphabet.values() if name != correct_name], NUM_OPTIONS - 1)
         options = [correct_name] + incorrect_names
         random.shuffle(options)
 
@@ -125,7 +126,7 @@ def main():
             save_stats(stats)
             break
 
-        if '1' <= user_input <= '4' and options[int(user_input) - 1] == correct_name:
+        if '1' <= user_input <= str(NUM_OPTIONS) and options[int(user_input) - 1] == correct_name:
            blink("green")
            stats[character]["correct"] += 1
         else:
