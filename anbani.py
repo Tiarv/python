@@ -46,7 +46,7 @@ mkhedruli_alphabet = {
 }
 
 STATS_FILE = "mkhedruli_stats.json"
-NUM_OPTIONS = 5
+num_options = 5
 DISPLAY_OPTIONS_HORIZONTALLY = False
 EXIT_KEY = "0"
 
