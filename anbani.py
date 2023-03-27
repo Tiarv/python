@@ -89,7 +89,7 @@ def choose_character(stats, exponent=0.5, time_factor=0.1):
 
 def show_question(character, options):
     clear_screen()
-    print(f"[ Press EXIT_KEY to save stats and quit ]\n")
+    print(f"[ Press {EXIT_KEY} to save stats and quit ]\n")
     print(f"Identify the name of the following Georgian character:\n\n{character}\n")
     if DISPLAY_OPTIONS_HORIZONTALLY:
         option_strings = [f"{i+1}. {option}" for i, option in enumerate(options)]
@@ -111,9 +111,13 @@ def getch():
     try:
         tty.setraw(sys.stdin.fileno())
         ch = sys.stdin.read(1)
+        if ch == EXIT_KEY:
+            clear_screen()
+            sys.exit(0)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
+
 
 def main():
     stats = load_stats()
