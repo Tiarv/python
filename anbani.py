@@ -98,12 +98,25 @@ def show_question(character, options):
         for i, option in enumerate(options):
             print(f"{i+1}. {option}")
 
-def blink(color):
+def blink(color, character, stats, time_diff):
     if color == "green":
-        print("\033[32mCorrect!\033[0m")
+        print(f"\033[32mCorrect! You took {time_diff:.2f}s to answer.\033[0m")
+        if "avg_time" not in stats[character]:
+            print(f"\033[32mThis was your first time answering this character.\033[0m")
+        else:
+            prev_avg_time = stats[character]["avg_time"]
+            time_diff_avg = time_diff - prev_avg_time
+            if time_diff_avg < 0:
+                time_diff_avg_str = f"{-time_diff_avg:.2f}s faster than before"
+            elif time_diff_avg > 0:
+                time_diff_avg_str = f"{time_diff_avg:.2f}s slower than before"
+            else:
+                time_diff_avg_str = "the same as before"
+            print(f"You took {prev_avg_time:.2f}s on average to answer this character before. "
+                  f"This time, you were {time_diff_avg_str}.")
     elif color == "red":
-        print("\033[31mIncorrect!\033[0m")
-    time.sleep(0.4)
+        print("\033[31mIncorrect.\033[0m")
+    time.sleep(1.5)
 
 def getch():
     fd = sys.stdin.fileno()
@@ -117,7 +130,6 @@ def getch():
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
-
 
 def main():
     stats = load_stats()
@@ -140,7 +152,6 @@ def main():
         if answer == EXIT_KEY:
             break
         elif options[int(answer)-1] == correct_name:
-            blink("green")
             time_diff = round(end_time - start_time, 2)
             if "avg_time" not in stats[character]:
                 stats[character]["avg_time"] = None
@@ -151,10 +162,11 @@ def main():
                 stats[character]["avg_time"] = round((prev_avg_time + time_diff) / 2, 2)
             stats[character]["correct"] += 1
             answered_correctly = True
+            blink("green", character, stats, time_diff)
         else:
-            blink("red")
             stats[character]["incorrect"] += 1
             answered_correctly = False
+            blink("red", character, stats, 0)
 
         if answer == EXIT_KEY:
             break
@@ -164,7 +176,6 @@ def main():
 
     save_stats(stats)
     sys.exit(0)
-
 
 if __name__ == "__main__":
     main()
